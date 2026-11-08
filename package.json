@@ -286,12 +286,12 @@
         }
     },
     "scripts": {
-        "vscode:prepublish": "npm run package",
+        "vscode:prepublish": "webpack --mode production",
         "package": "webpack --mode production",
         "compile": "tsc -p .",
         "check": "tsc -p . --noEmit",
         "watch": "tsc -p . --watch",
-        "test": "npm run compile && node ./out/test/index.js"
+        "test": "tsc -p . && node ./out/test/index.js"
     },
     "dependencies": {},
     "devDependencies": {

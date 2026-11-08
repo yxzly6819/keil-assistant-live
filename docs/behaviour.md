@@ -4,6 +4,9 @@ This is the one page that says what version 2 of Keil Assistant promises, what i
 refuses to do, and what is still undecided. Everything here is meant to be
 checkable against the code; if it drifts, the document is wrong.
 
+Version 2 is a fork of [github0null/keil-assistant](https://github.com/github0null/keil-assistant)
+(MIT, by cl); the behaviour below is what *this* fork promises.
+
 ## 1. Purpose
 
 Keil Assistant lets you treat a Keil uVision 5 project as a VS Code project:
@@ -31,7 +34,8 @@ in the *workspace root*:
 | File | Location | Why |
 | --- | --- | --- |
 | cpptools configuration | `<workspace>/.vscode/c_cpp_properties.json` | cpptools only reads it from the folder's `.vscode` |
-| Diagnostics log | `<workspace>/.vscode/keil-assistant/<projectId>.log` | one file per project, so multi-project workspaces do not interleave |
+| Diagnostics log | `<workspace>/.vscode/keil-assistant/<projectId>.log` | what the extension did, one file per project so multi-project workspaces do not interleave |
+| Build log | `<workspace>/.vscode/keil-assistant/<projectId>.build.log` | the `-o` output of the last uVision run; parsed into diagnostics and opened by `Show Log` |
 
 `<workspace>` is resolved in this order:
 
@@ -55,6 +59,8 @@ in the *workspace root*:
 | B10 | The tree shows the active target only; `Switch Target` changes which one. |
 | B11 | A second build request for the same project while one is running is refused with a message. |
 | B12 | Compiler output is streamed live into the `Keil Assistant` output channel, written to `<workspace>/.vscode/keil-assistant/<projectId>.build.log`, and parsed into Problems panel entries. Build failures offer `Show Log`, which opens that file. |
+| B13 | Build/Rebuild/Download are reachable from the tree (inline buttons), from the editor title bar, and from `F7` / `Ctrl+Alt+F7` / `Ctrl+Alt+D`. The title bar entry point only exists while a project is loaded (`keil.hasProject`). |
+| B14 | The output channel is a log channel: it is brought forward when a build starts (without taking focus) and every line is coloured by severity — errors red, warnings yellow, the summary line by its counts, progress neutral. |
 
 ## 5. Invariants (things the code must never do)
 
@@ -79,6 +85,10 @@ in the *workspace root*:
 - Behaviour in a window without any folder: the extension works, but this is a
   fallback, not a supported workflow.
 - Build cancellation and timeouts.
+- Whether the same three actions should also be published as VS Code tasks
+  (Task Provider), so user tasks can `dependsOn` them. Today they are plain
+  commands, which is deliberately quieter.
+- Showing all targets side by side instead of only the active one.
 - Correct handling of non-UTF-8 (e.g. GBK) project files: a BOM is stripped, but
   the file is otherwise assumed to be UTF-8.
 

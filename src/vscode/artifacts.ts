@@ -26,6 +26,11 @@ export class ArtifactPaths {
         return join(this.stateDirectory, `${this.projectId}.log`);
     }
 
+    /** Compiler output written by `UV4.exe -o`; parsed into diagnostics. */
+    get buildLogFile(): string {
+        return join(this.stateDirectory, `${this.projectId}.build.log`);
+    }
+
     ensureStateDirectory(): void {
         fs.mkdirSync(this.stateDirectory, { recursive: true });
     }

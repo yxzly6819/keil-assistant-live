@@ -3,6 +3,8 @@ import { basename, dirname, extname, join } from 'node:path';
 import * as vscode from 'vscode';
 
 import { actionTitle, BuildAction, classifyExitCode, problemMatchersFor, uv4Command } from '../core/command';
+import { buildSummary, flashSummary } from '../core/buildlog';
+import { parseBuildOutput } from '../core/diagnostics';
 import {
     configKey,
     configNamesFor,
@@ -44,6 +46,8 @@ export class ProjectStore implements vscode.Disposable {
     private readonly entries = new Map<string, Entry>();
     private readonly emitter = new vscode.EventEmitter<void>();
     private readonly subscriptions: vscode.Disposable[] = [];
+    private readonly diagnostics = vscode.languages.createDiagnosticCollection('keil-assistant');
+    private readonly diagnosticFiles = new Map<string, vscode.Uri[]>();
     private settings: Settings;
     private activeProjectId: string | undefined;
     private warnedAboutFallback = false;
@@ -184,7 +188,13 @@ export class ProjectStore implements vscode.Disposable {
         }
 
         entry.building = true;
-        const command = uv4Command(action, uv4Path, entry.project.path, target.name);
+        const command = uv4Command(
+            action,
+            uv4Path,
+            entry.project.path,
+            target.name,
+            entry.artifacts.buildLogFile
+        );
         this.logger.info(
             entry.artifacts.logFile,
             `${actionTitle(action)} "${target.name}": ${command.executable} ${command.args.join(' ')}`
@@ -197,22 +207,37 @@ export class ProjectStore implements vscode.Disposable {
                 problemMatchersFor(entry.project.toolchain)
             );
             const result = classifyExitCode(exitCode);
+            const output = readText(entry.artifacts.buildLogFile);
 
+            this.publishDiagnostics(entry, output);
+            this.logBuildOutput(entry, action, output);
+
+            const summary = buildSummary(output);
             if (result.outcome === 'failure') {
-                this.logger.error(entry.artifacts.logFile, `${actionTitle(action)} failed: ${result.detail}`);
-                await this.reportFailure(entry, action, result.detail);
+                this.logger.error(
+                    entry.artifacts.logFile,
+                    `${actionTitle(action)} failed: ${result.detail}${summary === undefined ? '' : ` — ${summary}`}`
+                );
+                await this.reportFailure(entry, action, result.detail, summary);
                 return;
             }
 
             this.logger.info(
                 entry.artifacts.logFile,
-                `${actionTitle(action)} finished: ${result.detail} (exit code ${exitCode})`
+                `${actionTitle(action)} finished: ${result.detail}${summary === undefined ? '' : ` — ${summary}`} (exit code ${exitCode})`
             );
-            if (result.outcome === 'warnings') {
+
+            if (action === 'download') {
+                const flash = flashSummary(output);
+                void vscode.window.showInformationMessage(
+                    flash === undefined ? 'Download finished.' : `Download finished: ${flash}`
+                );
+            } else if (result.outcome === 'warnings') {
                 void vscode.window.showWarningMessage(
-                    `${actionTitle(action)} finished with warnings. See the terminal for details.`
+                    `${actionTitle(action)} finished with warnings. See the Problems panel or the output channel.`
                 );
             }
+
             this.refreshDependencies(entry);
             this.notify();
         } catch (error) {
@@ -230,10 +255,15 @@ export class ProjectStore implements vscode.Disposable {
         }
         try {
             entry.artifacts.ensureStateDirectory();
-            if (!fs.existsSync(entry.artifacts.logFile)) {
-                appendLine(entry.artifacts.logFile, '# Keil Assistant log');
+            // The `-o` log holds the compiler messages, the other one records
+            // what the extension did; show the more useful one.
+            const file = fs.existsSync(entry.artifacts.buildLogFile)
+                ? entry.artifacts.buildLogFile
+                : entry.artifacts.logFile;
+            if (!fs.existsSync(file)) {
+                appendLine(file, '# Keil Assistant log');
             }
-            await vscode.window.showTextDocument(vscode.Uri.file(entry.artifacts.logFile), { preview: false });
+            await vscode.window.showTextDocument(vscode.Uri.file(file), { preview: false });
         } catch (error) {
             void vscode.window.showErrorMessage(`Cannot open the log: ${messageOf(error)}`);
         }
@@ -244,6 +274,8 @@ export class ProjectStore implements vscode.Disposable {
             entry.dispose();
         }
         this.entries.clear();
+        this.diagnostics.clear();
+        this.diagnostics.dispose();
         for (const subscription of this.subscriptions) {
             subscription.dispose();
         }
@@ -399,10 +431,68 @@ export class ProjectStore implements vscode.Disposable {
         );
     }
 
-    private async reportFailure(entry: Entry, action: BuildAction, detail: string): Promise<void> {
-        const choice = await vscode.window.showErrorMessage(`${actionTitle(action)} failed: ${detail}.`, 'Show Log');
+    private async reportFailure(
+        entry: Entry,
+        action: BuildAction,
+        detail: string,
+        summary: string | undefined
+    ): Promise<void> {
+        const text =
+            summary === undefined
+                ? `${actionTitle(action)} failed: ${detail}.`
+                : `${actionTitle(action)} failed: ${detail} (${summary}).`;
+        const choice = await vscode.window.showErrorMessage(text, 'Show Log');
         if (choice === 'Show Log') {
             await this.openLog(entry.project.id);
+        }
+    }
+
+    /**
+     * `UV4.exe` never writes to the console, so the compiler messages come from
+     * the `-o` log and are turned into real Problems panel entries here.
+     */
+    private publishDiagnostics(entry: Entry, output: string): void {
+        for (const uri of this.diagnosticFiles.get(entry.project.id) ?? []) {
+            this.diagnostics.delete(uri);
+        }
+        this.diagnosticFiles.delete(entry.project.id);
+
+        if (output.trim() === '') {
+            return;
+        }
+
+        const byFile = new Map<string, vscode.Diagnostic[]>();
+        for (const item of parseBuildOutput(output)) {
+            const file = resolveProjectPath(entry.project.dir, item.file);
+            const line = Math.max(item.line - 1, 0);
+            const column = Math.max((item.column ?? 1) - 1, 0);
+            const range = new vscode.Range(line, column, line, 500);
+            const severity =
+                item.severity === 'warning'
+                    ? vscode.DiagnosticSeverity.Warning
+                    : vscode.DiagnosticSeverity.Error;
+            const diagnostic = new vscode.Diagnostic(range, item.message, severity);
+            diagnostic.source = 'keil';
+            byFile.set(file, [...(byFile.get(file) ?? []), diagnostic]);
+        }
+
+        const uris: vscode.Uri[] = [];
+        for (const [file, diagnostics] of byFile) {
+            const uri = vscode.Uri.file(file);
+            this.diagnostics.set(uri, diagnostics);
+            uris.push(uri);
+        }
+        this.diagnosticFiles.set(entry.project.id, uris);
+    }
+
+    private logBuildOutput(entry: Entry, action: BuildAction, output: string): void {
+        if (output.trim() === '') {
+            this.logger.raw(`--- ${actionTitle(action)} (${entry.project.name}): no output ---`);
+            return;
+        }
+        this.logger.raw(`--- ${actionTitle(action)} (${entry.project.name}) ---`);
+        for (const line of output.trim().split(/\r\n|\r|\n/)) {
+            this.logger.raw(line.replace(/\u0000/g, ''));
         }
     }
 
@@ -529,4 +619,12 @@ function isFileLocked(error: unknown): boolean {
 
 function messageOf(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
+}
+
+function readText(file: string): string {
+    try {
+        return fs.readFileSync(file, 'utf8');
+    } catch {
+        return '';
+    }
 }

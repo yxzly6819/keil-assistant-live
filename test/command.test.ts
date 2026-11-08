@@ -20,6 +20,19 @@ test('the command keeps the target name as a single argument', () => {
     assert.deepEqual(command.args, ['-b', PROJECT, '-j0', '-t', 'Target 1']);
 });
 
+test('an output log is appended when a path is given', () => {
+    const command = uv4Command('download', UV4, PROJECT, 'timer', 'D:\\ws\\.vscode\\keil-assistant\\abc.build.log');
+    assert.deepEqual(command.args, [
+        '-f',
+        PROJECT,
+        '-j0',
+        '-t',
+        'timer',
+        '-o',
+        'D:\\ws\\.vscode\\keil-assistant\\abc.build.log'
+    ]);
+});
+
 test('problem matchers follow the toolchain', () => {
     assert.deepEqual(problemMatchersFor('C51'), ['$c51']);
     assert.deepEqual(problemMatchersFor('ARM'), ['$armcc', '$gcc']);

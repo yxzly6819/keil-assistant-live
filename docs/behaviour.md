@@ -47,14 +47,14 @@ in the *workspace root*:
 | B2 | Files whose base name is in `KeilAssistant.Project.ExcludeList` are never auto-loaded. |
 | B3 | The project file is watched; a change reloads the model after a 300 ms quiet period. While uVision holds its own lock, the reload retries every 500 ms. |
 | B4 | A project file that cannot be parsed produces a named error (`ProjectFormatError`) and leaves the previously loaded model untouched. |
-| B5 | Build/Rebuild/Download run `UV4.exe` as a VS Code task, so `$c51`/`$armcc`/`$gcc` problem matchers fill the Problems panel. |
+| B5 | Build/Rebuild/Download run `UV4.exe` as a VS Code task. Because `UV4.exe` is a GUI program that prints nothing to a console, `-o <build log>` is passed and the log is parsed: compiler errors and warnings become entries in the Problems panel. |
 | B6 | Success is decided by uVision's `ERRORLEVEL`: `0` and `1` (warnings) are success, everything else is failure with a named reason. The log records the command, the code and the verdict. |
 | B7 | After a successful ARM build the `.d` files in the target output directory refresh the "references" children of each source. |
 | B8 | `c_cpp_properties.json` receives one configuration per Keil target. The name is the target name, prefixed with `<project>/` only when two targets would collide. |
 | B9 | Configurations and fields the extension does not own are preserved byte-for-byte in meaning (JSON is re-serialised with 4-space indentation). |
 | B10 | The tree shows the active target only; `Switch Target` changes which one. |
 | B11 | A second build request for the same project while one is running is refused with a message. |
-| B12 | Errors are reported in the output channel `Keil Assistant` and in the per-project log; build failures also offer `Show Log`. |
+| B12 | Compiler output goes to the output channel `Keil Assistant`, to `<workspace>/.vscode/keil-assistant/<projectId>.build.log`, and to the Problems panel. Build failures offer `Show Log`, which opens that file. |
 
 ## 5. Invariants (things the code must never do)
 
@@ -79,9 +79,6 @@ in the *workspace root*:
 - Behaviour in a window without any folder: the extension works, but this is a
   fallback, not a supported workflow.
 - Build cancellation and timeouts.
-- Whether compiler output should also be mirrored into the per-project log with
-  `UV4 -o <file>`. Today the task terminal is the source of truth for compiler
-  messages; the per-project log only records the command and the verdict.
 - Correct handling of non-UTF-8 (e.g. GBK) project files: a BOM is stripped, but
   the file is otherwise assumed to be UTF-8.
 
@@ -90,13 +87,19 @@ in the *workspace root*:
 **uVision command line**
 
 ```
-UV4.exe -b|-r|-f <project> -j0 -t <target>
+UV4.exe -b|-r|-f <project> -j0 -t <target> -o <build log>
 ```
 
 `-b` build, `-r` rebuild, `-f` flash, `-j0` non-interactive, `-t` target.
+`-o` is not optional: `UV4.exe` has no console output, so the log file is the
+only source of compiler messages.
+
+**Compiler messages** are parsed from that log (`path(line): error: message`,
+optionally several messages on one line, plus the GCC `path:line:col:` form).
+The terminal is intentionally ignored as a source of build output.
 
 **Exit code** is uVision's documented `ERRORLEVEL`, which is the only signal the
-extension uses (problem matchers parse the compiler output separately):
+extension uses to decide the verdict:
 
 | Code | Meaning | Verdict |
 | --- | --- | --- |

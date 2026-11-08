@@ -21,12 +21,16 @@ export function uv4Command(
     action: BuildAction,
     uv4Path: string,
     projectPath: string,
-    targetName: string
+    targetName: string,
+    outputLog?: string
 ): Uv4Command {
-    return {
-        executable: uv4Path,
-        args: [ACTION_FLAGS[action], projectPath, '-j0', '-t', targetName]
-    };
+    const args = [ACTION_FLAGS[action], projectPath, '-j0', '-t', targetName];
+    if (outputLog !== undefined) {
+        // `UV4.exe` prints nothing to the console; `-o` is the only way to see
+        // the compiler messages.
+        args.push('-o', outputLog);
+    }
+    return { executable: uv4Path, args };
 }
 
 export function actionTitle(action: BuildAction): string {

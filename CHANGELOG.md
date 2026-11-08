@@ -20,6 +20,11 @@ Rewritten as a layered extension. Every user-facing feature of 1.7 is kept.
 - **New:** unit tests for the parser, command builder, config merge, dependency
   parser and path variables (`npm test`).
 - **New:** `docs/behaviour.md`, the behaviour specification.
+- **Fixed:** compiler output is finally visible. `UV4.exe` is a GUI program that
+  prints nothing to the terminal, so `-o <build log>` is passed to it; the log is
+  parsed into Problems panel entries (full path, line, severity, message) and
+  shown in the `Keil Assistant` output channel. Download results such as
+  `Programming Done. Verify OK.` are reported in a notification.
 - **Fixed:** a build that succeeds with warnings (uVision `ERRORLEVEL` 1) is no
   longer reported as a failure; all documented uVision exit codes are mapped to a
   named reason.

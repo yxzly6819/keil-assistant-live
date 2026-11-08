@@ -21,6 +21,11 @@ export class Logger {
         this.write('error', logFile, message);
     }
 
+    /** Appends already formatted text, e.g. the compiler output of a build. */
+    raw(text: string): void {
+        this.channel.appendLine(text);
+    }
+
     private write(level: string, logFile: string | undefined, message: string): void {
         const line = `${new Date().toISOString()} [${level}] ${message}`;
         this.channel.appendLine(line);

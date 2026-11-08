@@ -18,7 +18,7 @@ Use it together with the [C/C++ extension](https://marketplace.visualstudio.com/
 
 - **Import** a `.uvproj` / `.uvprojx`, or just open the folder that contains it.
 - **Project tree** — target → file group → source, with icons for C, C++, headers, assembler and libraries; files excluded from the build are dimmed.
-- **Build, rebuild, flash** with `F7` / `Ctrl+Alt+F7` / `Ctrl+Alt+D`. `UV4.exe` is a GUI program and prints nothing to the terminal, so the extension passes `-o` and turns the build log into Problems panel entries (file, line, severity). The full log also goes to the `Keil Assistant` output channel.
+- **Build, rebuild, flash** with `F7` / `Ctrl+Alt+F7` / `Ctrl+Alt+D`. `UV4.exe` is a GUI program that prints nothing, so the extension generates a tiny `.cmd` wrapper: it runs uVision, echoes the `-o` log into the task terminal and exits with uVision's own status. The same log becomes Problems panel entries and is echoed to the `Keil Assistant` output channel.
 - **C/C++ configuration** regenerated per target, including the built-in ARMCC, ARMCLANG and C51 macros.
 - **Reference files** for ARM projects, read from the `.d` files after a successful build.
 - **Live reload** when the project file changes on disk.

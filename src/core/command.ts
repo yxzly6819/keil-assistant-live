@@ -44,8 +44,31 @@ export function actionTitle(action: BuildAction): string {
     }
 }
 
-export function problemMatchersFor(toolchain: 'C51' | 'ARM'): string[] {
-    return toolchain === 'C51' ? ['$c51'] : ['$armcc', '$gcc'];
+/**
+ * A batch wrapper around the uVision invocation.
+ *
+ * `UV4.exe` is a GUI program, so running it directly leaves the task terminal
+ * empty. The wrapper runs it, remembers the exit code, prints the `-o` log into
+ * the same terminal (which is also what the problem matchers look at) and exits
+ * with uVision's own code so the task verdict stays correct.
+ */
+export function batchScript(command: Uv4Command, outputLog: string): string {
+    return [
+        '@echo off',
+        // Project paths may contain non-ASCII characters; read the rest of the
+        // script as UTF-8.
+        'chcp 65001 >nul',
+        'setlocal',
+        `${quoteForCmd(command.executable)} ${command.args.map(quoteForCmd).join(' ')}`,
+        'set "KEIL_RC=%ERRORLEVEL%"',
+        `if exist ${quoteForCmd(outputLog)} type ${quoteForCmd(outputLog)}`,
+        'exit /b %KEIL_RC%',
+        ''
+    ].join('\r\n');
+}
+
+export function quoteForCmd(value: string): string {
+    return /[\s"]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
 }
 
 export type ActionOutcome = 'success' | 'warnings' | 'failure';

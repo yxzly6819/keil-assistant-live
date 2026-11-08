@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import { basename, dirname, extname, join } from 'node:path';
 import * as vscode from 'vscode';
 
-import { actionTitle, BuildAction, classifyExitCode, problemMatchersFor, uv4Command } from '../core/command';
+import { actionTitle, batchScript, BuildAction, classifyExitCode, uv4Command } from '../core/command';
 import { buildSummary, flashSummary } from '../core/buildlog';
 import { parseBuildOutput } from '../core/diagnostics';
 import {
@@ -27,7 +27,7 @@ import { parseProject, resolveProjectPath, uniquePaths } from '../core/parser';
 import { ArtifactPaths, cppPropertiesFileFor } from './artifacts';
 import { readSettings, Settings, uv4PathFor, uv4SettingKey } from './config';
 import { appendLine, Logger } from './logger';
-import { runUv4Task } from './tasks';
+import { runBuildScript } from './tasks';
 import { resolverFor, preloadArmclangMacros } from './toolchain';
 import { discoverProjects, resolveProjectRoot } from './workspace';
 
@@ -201,10 +201,18 @@ export class ProjectStore implements vscode.Disposable {
         );
 
         try {
-            const exitCode = await runUv4Task(
-                command,
-                `${entry.project.name} · ${actionTitle(action)}`,
-                problemMatchersFor(entry.project.toolchain)
+            // The wrapper runs uVision, echoes the `-o` log into the task
+            // terminal and exits with uVision's status.
+            entry.artifacts.ensureStateDirectory();
+            fs.writeFileSync(
+                entry.artifacts.buildScriptFile,
+                batchScript(command, entry.artifacts.buildLogFile),
+                'utf8'
+            );
+
+            const exitCode = await runBuildScript(
+                entry.artifacts.buildScriptFile,
+                `${entry.project.name} · ${actionTitle(action)}`
             );
             const result = classifyExitCode(exitCode);
             const output = readText(entry.artifacts.buildLogFile);

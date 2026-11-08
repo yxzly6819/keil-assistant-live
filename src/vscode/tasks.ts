@@ -1,28 +1,16 @@
 import * as vscode from 'vscode';
 
-import { Uv4Command } from '../core/command';
-
 /**
  * Runs one uVision batch operation as a VS Code task.
  *
- * Task shell executions are the only way to keep the `problemMatchers` working,
- * and `onDidEndTaskProcess` gives us uVision's exit code back, which is what
- * build success is decided on.
+ * The task executes a generated `.cmd` wrapper (see `batchScript`), which runs
+ * uVision, prints its log into the task terminal and exits with uVision's own
+ * status. `onDidEndTaskProcess` therefore still reports the real verdict.
  */
-export async function runUv4Task(
-    command: Uv4Command,
-    label: string,
-    problemMatchers: readonly string[]
-): Promise<number | undefined> {
-    const execution = new vscode.ShellExecution(command.executable, [...command.args]);
-    const task = new vscode.Task(
-        { type: 'keil-task' },
-        vscode.TaskScope.Global,
-        label,
-        'keil',
-        execution,
-        [...problemMatchers]
-    );
+export async function runBuildScript(scriptPath: string, label: string): Promise<number | undefined> {
+    const shell = process.env.ComSpec ?? 'cmd.exe';
+    const execution = new vscode.ShellExecution(shell, ['/d', '/s', '/c', scriptPath]);
+    const task = new vscode.Task({ type: 'keil-task' }, vscode.TaskScope.Global, label, 'keil', execution);
     task.isBackground = false;
     task.presentationOptions = {
         reveal: vscode.TaskRevealKind.Always,

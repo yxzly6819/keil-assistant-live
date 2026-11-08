@@ -1,104 +1,76 @@
 # Keil Assistant
 
-[![](https://vsmarketplacebadge.apphb.com/version/CL.keil-assistant.svg)](https://marketplace.visualstudio.com/items?itemName=CL.keil-assistant)      [![](https://vsmarketplacebadge.apphb.com/installs/CL.keil-assistant.svg)](https://marketplace.visualstudio.com/items?itemName=CL.keil-assistant)     [![](https://vsmarketplacebadge.apphb.com/downloads/CL.keil-assistant.svg)](https://marketplace.visualstudio.com/items?itemName=CL.keil-assistant)     [![](https://vsmarketplacebadge.apphb.com/rating/CL.keil-assistant.svg)](https://marketplace.visualstudio.com/items?itemName=CL.keil-assistant)
+Open, browse, build and flash Keil uVision 5 projects (`.uvproj` / `.uvprojx`) from VS Code.
 
-## Summary 📑
+Use it together with the [C/C++ extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools): include paths and preprocessor defines from the Keil project are written to `c_cpp_properties.json`, so IntelliSense matches the real compiler.
 
-Keil assistive tool on VScode, used with C/C++ plug-in.
+> Version 2 is a refactor of [github0null/keil-assistant](https://github.com/github0null/keil-assistant). The original project is no longer maintained; this version keeps every user-facing feature and rewrites the internals.
 
-It provides syntax highlighting, code snippets for Keil projects, and supports compiling and downloading Keil projects.
+## What changed in 2.0
 
-**Keil uVison 5 and above is supported only**  
+- **The `.vscode` folder is created in the workspace, not next to the Keil project file.** The project directory is never written to.
+- Build / rebuild / flash run as VS Code tasks with problem matchers; success is decided by uVision's exit code.
+- The code is split into a pure core and a thin VS Code layer; the core has unit tests (`npm test`, 28 cases).
+- The bundled `Uv4Caller.exe` is no longer used (analysis in [docs/behaviour.md](docs/behaviour.md#8-appendix-uv4callerexe)).
+- An unset `UV4.exe` path now produces a clear message instead of a command containing `null`.
 
-**Windows platform only**
+## Features
 
-![preview](./res/preview/preview.png)
+- **Import** a `.uvproj` / `.uvprojx`, or just open the folder that contains it.
+- **Project tree** — target → file group → source, with icons for C, C++, headers, assembler and libraries; files excluded from the build are dimmed.
+- **Build, rebuild, flash** with `F7` / `Ctrl+Alt+F7` / `Ctrl+Alt+D`; compiler output feeds the Problems panel.
+- **C/C++ configuration** regenerated per target, including the built-in ARMCC, ARMCLANG and C51 macros.
+- **Reference files** for ARM projects, read from the `.d` files after a successful build.
+- **Live reload** when the project file changes on disk.
 
-***
+## Requirements
 
-## Features 🎉
+- Windows (uVision is Windows only), Keil uVision 5 or newer (C51 and MDK-ARM)
+- VS Code 1.85 or newer
 
-- Load the Keil C51/ARM project and display the project view as the Keil project style
-- Automatically monitor keil project files for changes and keep project views up to date
-- Compile, recompile, and burn Keil projects by calling the Keil command-line interface
-- Automatically generate c_cpp_property.json for C/C++ plug-in
+## Settings
 
-***
+| Setting | Meaning |
+| --- | --- |
+| `KeilAssistant.C51.Uv4Path` | Absolute path of the C51 `UV4.exe` |
+| `KeilAssistant.MDK.Uv4Path` | Absolute path of the MDK-ARM `UV4.exe` |
+| `KeilAssistant.Project.ExcludeList` | Project file names that are never auto-loaded |
+| `KeilAssistant.Project.FileLocationList` | Extra project paths or globs; `${workspaceFolder}` and friends are expanded |
 
-## Usage 📖
+## Generated files
 
-### Preparatory work
+Everything is written below the **workspace root**; the project directory stays clean.
 
-1. Install the C/C++ plug-in
->
-2. Go to the Keil-Assistant plug-in Settings and set the absolute path of the Keil executable uv4.exe
- 
- ![setting](./res/preview/setting.png)
+```
+<workspace>/
+└── .vscode/
+    ├── c_cpp_properties.json          # one per workspace folder
+    └── keil-assistant/
+        └── <projectId>.log            # one log per project
+```
 
-***
+The workspace root is the folder that contains the project, otherwise the first
+workspace folder, otherwise — when no folder is open — the project directory (with
+a one-time warning).
 
-### Start 🏃‍♀️
+When several projects share a folder, all of their targets end up in the same
+`c_cpp_properties.json`; a configuration is prefixed with `<project>/` only if the
+target names would collide.
 
-1. Create a project on Keil, add files, header path, etc
-> 
-2. Click **Open the Project** icon or **Use Vscode to directly open the directory where keil project file (.uvproj) is located**, and the keil project will be automatically loaded by the plug-in;
- 
- ![load](./res/preview/load.png)
+See [docs/behaviour.md](docs/behaviour.md) for the exact list of promises,
+invariants and open questions.
 
-### Common operations
+## Development
 
-- **Compile and burn**：Three buttons are provided, one for compile, one for download, and one for recompile
- 
- ![build](./res/preview/build.png)
+```bash
+pnpm install
+pnpm run compile    # tsc -> out/
+pnpm run test       # compile and run the unit tests
+pnpm run package    # webpack -> dist/extension.js
+```
 
->
+Press `F5` in VS Code to launch the extension host.
 
-- **Save and refresh**：Add/delete the source file, change and configure the project on Keil. Click **Save all** when the change is finished. The plug-in will automatically refresh the project when it detects the change of the Keil project
- 
- ![keil_save_all](./res/preview/keil_save_all.png)
+## License
 
->
-
-- **Open source file**：Clicking the source file will open it in preview mode, and double-clicking the source file will switch it to non-preview mode
- 
- ![open_file](./res/preview/open_file.png)
-
->
-
-- **Toggle the C/C++ plug-in configuration**：Click the target name to toggle between multiple C/C++ configurations
- 
- ![cpp_config](./res/preview/cpp_config.png)
-
->
-
-- **Switch keil Target**：Click the project toggle button to toggle between multiple Keil targets
- 
- ![active_target](./res/preview/active_target.png)
-
->
-
-- **Show reference**：After compilation is complete, you can expand the reference by clicking on the arrow icon for the source item (ARM project only)
- 
- ![show_referance](./res/preview/ref_show.png)
-
-***
-
-### Other settings
-
-- Workspace Settings: Project exclusion list(`KeilAssistant.Project.ExcludeList`)
- When there are multiple Keil projects in a directory, open it with the plug-in, and the plug-in loads all keil projects. This option allows you to specify which Keil projects you want to exclude, preventing the project from being automatically loaded when the workspace is opened
- **The default exclusion list**：
-  ```json
-  [
-      "template.uvproj",
-      "template.uvprojx"
-  ]
-  ```
-
-### Any other questions ?
-
-You can go to the following places to communicate
-
-- [Discussion: https://discuss.em-ide.com/t/keil-assistant](https://discuss.em-ide.com/t/keil-assistant)
-
-- [Github Issue: https://github.com/github0null/keil-assistant/issues](https://github.com/github0null/keil-assistant/issues)
+MIT, see [LICENSE](LICENSE).

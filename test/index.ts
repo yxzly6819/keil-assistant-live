@@ -1,0 +1,11 @@
+import './command.test';
+import './cppconfig.test';
+import './deps.test';
+import './macros.test';
+import './model.test';
+import './parser.test';
+import './paths.test';
+
+import { run } from './harness';
+
+void run();

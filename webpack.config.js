@@ -4,22 +4,20 @@
 
 const path = require('path');
 
+/** @type {import('webpack').Configuration} */
 const config = {
     target: 'node',
     entry: './src/extension.ts',
     output: {
         path: path.resolve(__dirname, 'dist'),
         filename: 'extension.js',
-        libraryTarget: 'commonjs2',
-        devtoolModuleFilenameTemplate: '../[resource-path]'
+        libraryTarget: 'commonjs2'
     },
-    devtool: 'source-map',
+    devtool: 'nosources-source-map',
     externals: {
-        vscode: 'commonjs vscode',
-        xml2js: 'xml2js'
+        vscode: 'commonjs vscode'
     },
     resolve: {
-        // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
         extensions: ['.ts', '.js']
     },
     module: {
@@ -27,13 +25,10 @@ const config = {
             {
                 test: /\.ts$/,
                 exclude: /node_modules/,
-                use: [
-                    {
-                        loader: 'ts-loader'
-                    }
-                ]
+                use: [{ loader: 'ts-loader' }]
             }
         ]
     }
 };
+
 module.exports = config;

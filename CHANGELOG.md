@@ -2,6 +2,37 @@
 
 All notable changes to the "keil-assistant" extension will be documented in this file.
 
+## [2.0.0]
+
+Rewritten as a layered extension. Every user-facing feature of 1.7 is kept.
+
+- **Changed:** `.vscode` is generated in the workspace folder instead of the
+  uVision project directory. `c_cpp_properties.json` lives in
+  `<workspace>/.vscode`, the per-project log in
+  `<workspace>/.vscode/keil-assistant/<projectId>.log`. Nothing is written next
+  to the project file, except for the documented fallback when no folder is open.
+- **Changed:** `c_cpp_properties.json` is now merged — configurations of other
+  tools and unknown fields survive, and the file is no longer rewritten when it
+  cannot be parsed (it is backed up to `.bak` first).
+- **Changed:** build / rebuild / flash run through the Task API, so the problem
+  matchers work in every window, and success is decided by uVision's exit code.
+- **New:** `Open Log` command, and a `Show Log` action on build failures.
+- **New:** unit tests for the parser, command builder, config merge, dependency
+  parser and path variables (`npm test`).
+- **New:** `docs/behaviour.md`, the behaviour specification.
+- **Fixed:** a build that succeeds with warnings (uVision `ERRORLEVEL` 1) is no
+  longer reported as a failure; all documented uVision exit codes are mapped to a
+  named reason.
+- **Fixed:** a missing `UV4.exe` path no longer produces a command containing the
+  literal string `null`; the setting is validated first.
+- **Fixed:** project files with a UTF-8 BOM are read correctly.
+- **Fixed:** a second build of the same project while one is running is refused.
+- **Removed:** the `lib/node_utility` copy, `CmdLineHandler`, `ResourceManager`,
+  and the `Uv4Caller.exe` dependency at run time (the binary stays in `bin/` for
+  reference).
+- **Removed:** `activationEvents: ["*"]`; the extension activates on its view,
+  its commands, or a workspace containing a project file.
+
 ## [v1.7.1]
 - Fixed: can't use shortcut key
 ***

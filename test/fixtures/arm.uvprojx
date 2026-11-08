@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<Project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="project_projx.xsd">
+
+  <SchemaVersion>2.1</SchemaVersion>
+  <Header>### uVision Project, (C) Keil Software</Header>
+
+  <Targets>
+    <Target>
+      <TargetName>Debug</TargetName>
+      <ToolsetNumber>0x4</ToolsetNumber>
+      <ToolsetName>ARM-ADS</ToolsetName>
+      <uAC6>1</uAC6>
+      <TargetOption>
+        <TargetCommonOption>
+          <Device>STM32F103C8</Device>
+          <Vendor>STMicroelectronics</Vendor>
+          <OutputDirectory>.\Objects\</OutputDirectory>
+          <OutputName>demo</OutputName>
+          <CreateExecutable>1</CreateExecutable>
+        </TargetCommonOption>
+        <TargetArmAds>
+          <Cads>
+            <interw>1</interw>
+            <Optim>4</Optim>
+            <VariousControls>
+              <MiscControls />
+              <Define>USE_HAL_DRIVER, STM32F103xB</Define>
+              <Undefine />
+              <IncludePath>.\Core\Inc;.\Drivers\CMSIS\Include</IncludePath>
+            </VariousControls>
+          </Cads>
+        </TargetArmAds>
+      </TargetOption>
+      <Groups>
+        <Group>
+          <GroupName>Application</GroupName>
+          <Files>
+            <File>
+              <FileName>main.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Core\Src\main.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f1xx_it.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Core\Src\stm32f1xx_it.c</FilePath>
+              <FileOption>
+                <CommonProperty>
+                  <IncludeInBuild>0</IncludeInBuild>
+                </CommonProperty>
+              </FileOption>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Generated</GroupName>
+          <GroupOption>
+            <CommonProperty>
+              <IncludeInBuild>0</IncludeInBuild>
+            </CommonProperty>
+          </GroupOption>
+          <Files>
+            <File>
+              <FileName>missing.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Core\Src\missing.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+      </Groups>
+    </Target>
+
+    <Target>
+      <TargetName>Release</TargetName>
+      <ToolsetNumber>0x4</ToolsetNumber>
+      <ToolsetName>ARM-ADS</ToolsetName>
+      <uAC6>0</uAC6>
+      <TargetOption>
+        <TargetCommonOption>
+          <Device>STM32F103C8</Device>
+          <OutputDirectory>.\Objects\</OutputDirectory>
+          <OutputName>demo</OutputName>
+        </TargetCommonOption>
+        <TargetArmAds>
+          <Cads>
+            <VariousControls>
+              <MiscControls />
+              <Define>NDEBUG</Define>
+              <Undefine />
+              <IncludePath>.\Core\Inc</IncludePath>
+            </VariousControls>
+          </Cads>
+        </TargetArmAds>
+      </TargetOption>
+    </Target>
+  </Targets>
+</Project>

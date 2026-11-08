@@ -202,9 +202,20 @@ export class ProjectStore implements vscode.Disposable {
             entry.artifacts.logFile,
             `${actionTitle(action)} "${target.name}": ${command.executable} ${command.args.join(' ')}`
         );
-        this.logger.raw('');
-        this.logger.raw(`──── ${actionTitle(action)} "${target.name}" · ${clock()} ────`);
+        this.logger.level('info', '');
+        this.logger.level('info', `──── ${actionTitle(action)} "${target.name}" · ${clock()} ────`);
+        this.logger.show();
         this.status.start(label);
+
+        let pendingLine = '';
+        const emitOutput = (chunk: string): void => {
+            pendingLine += chunk;
+            const lines = pendingLine.split(/\r?\n/);
+            pendingLine = lines.pop() ?? '';
+            for (const line of lines) {
+                this.logger.line(line);
+            }
+        };
 
         try {
             entry.artifacts.ensureStateDirectory();
@@ -212,9 +223,13 @@ export class ProjectStore implements vscode.Disposable {
             const exitCode = await runUv4({
                 command,
                 outputLog: entry.artifacts.buildLogFile,
-                onOutput: (chunk) => this.logger.stream(chunk)
+                onOutput: emitOutput
             });
             const seconds = ((Date.now() - started) / 1000).toFixed(1);
+            if (pendingLine !== '') {
+                this.logger.line(pendingLine);
+                pendingLine = '';
+            }
 
             const result = classifyExitCode(exitCode);
             const output = readText(entry.artifacts.buildLogFile);
@@ -227,7 +242,10 @@ export class ProjectStore implements vscode.Disposable {
                     : result.outcome === 'warnings'
                       ? 'finished with warnings'
                       : 'finished';
-            this.logger.raw(`──── ${footer} · ${seconds}s ────`);
+            this.logger.level(
+                result.outcome === 'failure' ? 'error' : result.outcome === 'warnings' ? 'warn' : 'info',
+                `──── ${footer} · ${seconds}s ────`
+            );
             this.status.finish(
                 result.outcome === 'failure' ? 'failure' : result.outcome === 'warnings' ? 'warnings' : 'ok',
                 label

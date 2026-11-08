@@ -8,7 +8,8 @@ import { Logger } from './vscode/logger';
 import { ProjectStore } from './vscode/projectStore';
 
 export function activate(context: vscode.ExtensionContext): void {
-    const channel = vscode.window.createOutputChannel('Keil Assistant');
+    // A log output channel colours every line by its severity and can be filtered.
+    const channel = vscode.window.createOutputChannel('Keil Assistant', { log: true });
     const logger = new Logger(channel);
     const store = new ProjectStore(logger);
     const explorer = new ProjectExplorer(store, new IconTheme(context.extensionPath));
@@ -33,7 +34,7 @@ export function deactivate(): void {
 function registerCommands(
     store: ProjectStore,
     explorer: ProjectExplorer,
-    channel: vscode.OutputChannel
+    channel: vscode.LogOutputChannel
 ): vscode.Disposable[] {
     return [
         vscode.commands.registerCommand('explorer.open', () => openProject(store)),

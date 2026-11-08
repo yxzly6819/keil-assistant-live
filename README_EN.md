@@ -1,14 +1,16 @@
-# Keil Assistant
+# Keil Assistant Live
 
 Open, browse, build and flash Keil uVision 5 projects (`.uvproj` / `.uvprojx`) from VS Code.
 
 Use it together with the [C/C++ extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools): include paths and preprocessor defines from the Keil project are written to `c_cpp_properties.json`, so IntelliSense matches the real compiler.
 
-> **This is a fork, not the original project.**
-> The upstream is [github0null/keil-assistant](https://github.com/github0null/keil-assistant) by **cl** (MIT), which is no longer maintained.
-> This repository reworks it as version 2.0: every user-facing feature is kept, the internals are rewritten, and a few defaults changed. See [What changed in 2.0](#what-changed-in-20) and [Provenance and license](#provenance-and-license).
+> **This is an independently maintained extension (`yxzly6819.keil-assistant-live`, starting at 1.0.0), based on a rewrite of [github0null/keil-assistant](https://github.com/github0null/keil-assistant) by cl (MIT).** The upstream project is no longer maintained.
+>
+> ⚠️ **It cannot be installed alongside the upstream Keil Assistant.** Both use the same command ids (`project.build`…), view id (`project`) and settings (`KeilAssistant.*`), so they overwrite each other. Uninstall the upstream extension first.
+>
+> Every user-facing feature is kept, the internals are rewritten, and a few defaults changed. See [What changed from upstream](#what-changed-from-upstream) and [Provenance and license](#provenance-and-license).
 
-## What changed in 2.0
+## What changed from upstream
 
 - **The `.vscode` folder is created in the workspace, not next to the Keil project file.** The project directory is never written to.
 - **Builds no longer go through a VS Code task or the terminal.** The extension runs `UV4.exe` as a child process, streams its `-o` log into the `Keil Assistant` output channel, and decides the verdict from uVision's exit code.
@@ -150,15 +152,18 @@ path variables all have cases, with sanitised fixtures in `test/fixtures/`.
 
 ## Provenance and license
 
+- **This extension:** `yxzly6819.keil-assistant-live`, displayed as *Keil Assistant Live*, starting at version **1.0.0**, maintained by **yxzly6819**, MIT, <https://github.com/yxzly6819/keil-assistant-live>.
 - **Upstream:** [github0null/keil-assistant](https://github.com/github0null/keil-assistant) by **cl**, MIT, last released as 1.7.x and no longer maintained.
-- **This repository:** a fork of it, starting at version **2.0.0**. `LICENSE` keeps the upstream MIT text and `Copyright (c) 2020 cl`; this fork's changes are released under the same licence.
+- **Relationship:** this is an **independent rewrite** of the upstream code, not an official successor. The two extensions therefore **cannot be installed together** — same command ids, view id and settings keys.
+- **Licence:** `LICENSE` keeps the upstream line `Copyright (c) 2020 cl` and adds `Copyright (c) 2026 yxzly6819`. The MIT terms require keeping the original notice.
 - **Kept from upstream:** project import and discovery, the Keil project tree, build/rebuild/flash, `c_cpp_properties.json` generation, the `A51` grammar and snippets, the icons, the four `KeilAssistant.*` settings, and the command/view ids.
-- **Changed by this fork:** generated files moved from the project directory to the workspace, builds run in-process (no task, no terminal), the output channel is a coloured log channel, the build log is parsed into diagnostics, the code is split into a pure core plus a VS Code layer with 47 unit tests, and `bin/Uv4Caller.exe` is no longer needed at run time.
+- **Changed by this version:** generated files moved from the project directory to the workspace, builds run in-process (no task, no terminal), the output channel is a coloured log channel shown automatically, the build log is parsed into diagnostics, the code is split into a pure core plus a VS Code layer with 47 unit tests, `bin/Uv4Caller.exe` is no longer needed at run time, and the three actions also live in the editor title bar.
 - **`bin/Uv4Caller.exe`** is the upstream binary, kept for reference only; it is not called and not shipped in the `.vsix`.
-- **Issues** should go to this fork's repository — the upstream project is unmaintained.
-- **Publishing**: see [docs/publishing.md](docs/publishing.md) for the checklist, including the `publisher` / `repository` fields in `package.json` that still point upstream.
+- **Issues** belong to [this repository](https://github.com/yxzly6819/keil-assistant-live/issues) — the upstream project is unmaintained.
+- **Publishing:** see [docs/publishing.md](docs/publishing.md).
 
 ## License
 
 MIT, see [LICENSE](LICENSE).
+
 

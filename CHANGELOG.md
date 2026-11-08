@@ -1,12 +1,15 @@
 # Change Log
 
-All notable changes to the "keil-assistant" extension will be documented in this file.
+All notable changes to the "Keil Assistant Live" extension
+(`yxzly6819.keil-assistant-live`) are documented in this file.
 
-## [2.0.0]
+## [1.0.0]
 
-This is a fork of [github0null/keil-assistant](https://github.com/github0null/keil-assistant)
-(MIT, by cl), which is no longer maintained. Every user-facing feature of 1.7 is
-kept and the internals are rewritten.
+1.0.0 is an independent rewrite of
+[github0null/keil-assistant](https://github.com/github0null/keil-assistant) (MIT, by cl),
+which is no longer maintained. Every user-facing feature of 1.7 is kept and the
+internals are rewritten. It cannot be installed alongside the upstream extension:
+the command ids, the view id and the settings keys are the same.
 
 - **Changed:** `.vscode` is generated in the workspace folder instead of the
   uVision project directory. `c_cpp_properties.json` lives in
@@ -47,6 +50,12 @@ kept and the internals are rewritten.
 - **Removed:** the contributed `taskDefinitions` and `problemMatchers`. The build
   log is parsed by the extension itself, so the Problems panel has one source of
   truth and no task is involved.
+
+***
+
+The entries below are the history of the upstream project
+([github0null/keil-assistant](https://github.com/github0null/keil-assistant)),
+kept for reference. They are not releases of this extension.
 
 ## [v1.7.1]
 - Fixed: can't use shortcut key

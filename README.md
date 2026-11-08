@@ -1,14 +1,16 @@
-# Keil Assistant
+# Keil Assistant Live
 
 在 VS Code 里打开、浏览、编译、烧录 Keil uVision 5 工程（`.uvproj` / `.uvprojx`）。
 
 配合 [C/C++ 插件](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools) 使用：扩展会把 Keil 工程里的头文件路径、宏定义同步进 `c_cpp_properties.json`，让 IntelliSense 与真实编译保持一致。
 
-> **这是 fork，不是原项目。**
-> 上游是 [github0null/keil-assistant](https://github.com/github0null/keil-assistant)（作者 cl，MIT 协议），已经停止更新。
-> 本仓库在 2.0 上对它做了重构：保留全部用户功能，重写内部结构，并改变了几项默认行为。详见 [2.0 的变化](#20-的变化) 与 [来源与许可](#来源与许可fork-说明)。
+> **这是一个独立维护的新扩展（`yxzly6819.keil-assistant-live`，从 1.0.0 开始），基于 [github0null/keil-assistant](https://github.com/github0null/keil-assistant)（作者 cl，MIT 协议）重写。** 上游已停止更新。
+>
+> ⚠️ **不能与上游的 Keil Assistant 同时安装。** 两者的命令 id（`project.build`…）、视图 id（`project`）和配置键（`KeilAssistant.*`）完全同名，同时启用会互相覆盖；装本扩展前请先卸载上游扩展。
+>
+> 本版保留了上游的全部用户功能，重写了内部结构，并改变了几项默认行为。详见 [相对上游的改动](#相对上游的改动) 与 [来源与许可](#来源与许可)。
 
-## 2.0 的变化
+## 相对上游的改动
 
 - **`.vscode` 生成在工作区目录，而不是 Keil 工程目录**：工程目录不再被写入任何文件。
 - **编译/烧录不再经过 VS Code Task 和终端**：扩展以子进程运行 `UV4.exe`，把 `-o` 日志实时流进 `Keil Assistant` 输出通道，判定以 uVision 的退出码为准。
@@ -153,17 +155,20 @@ pnpm run package    # webpack 打包到 dist/extension.js
 - 只显示当前 Target，不并列显示多个。
 - 不解析 `.uvoptx`（调试器、断点等本机设置），因此不提供调试集成。
 
-## 来源与许可（Fork 说明）
+## 来源与许可
 
-- **上游**：[github0null/keil-assistant](https://github.com/github0null/keil-assistant)，作者 **cl**，MIT 协议，最后更新于 1.7.x（已停止维护）。
-- **本仓库**：上游的 fork，版本从 **2.0.0** 起。`LICENSE` 保留上游的 MIT 文本与 `Copyright (c) 2020 cl`；本 fork 的修改同样以 MIT 发布。
-- **保留自上游**：工程导入与自动发现、Keil 工程树、编译/重编译/下载、`c_cpp_properties.json` 生成、`A51` 语法与代码片段、图标资源、四个 `KeilAssistant.*` 配置键、命令与视图 id（`project.build`、`project` 视图等）。
-- **本 fork 的改动**：生成文件从工程目录移到工作区、构建改为进程内执行（不再用 VS Code Task、不再占用终端）、输出通道改为按级别上色、编译日志解析成诊断、核心层与 VS Code 层分离并有 47 个单元测试、移除运行期对 `bin/Uv4Caller.exe` 的依赖。
-- **`bin/Uv4Caller.exe`** 是上游随包分发的二进制，本 fork 保留在仓库里作参考，但运行期不再调用，也不打进 `.vsix`（见 `.vscodeignore`）。
-- **问题反馈**：上游已停止更新，请提到本 fork 的仓库，而不是上游的 issue 区。
-- **发布**：打 `.vsix` / 上架前的检查清单见 [docs/publishing.md](docs/publishing.md)（包括 `package.json` 里仍指向上游的 `publisher`/`repository` 等字段）。
+- **本扩展**：`yxzly6819.keil-assistant-live`，显示名 *Keil Assistant Live*，版本从 **1.0.0** 起，维护者 **yxzly6819**，MIT 协议，仓库 <https://github.com/yxzly6819/keil-assistant-live>。
+- **上游**：[github0null/keil-assistant](https://github.com/github0null/keil-assistant)，作者 **cl**，MIT 协议，最后版本 1.7.x，已停止维护。
+- **关系**：本扩展是上游代码的**独立重写**，不是上游的官方后续版本。因此 **两者不能同时安装**——命令 id、视图 id、配置键同名（见页首提示）。
+- **许可**：`LICENSE` 保留上游版权行 `Copyright (c) 2020 cl`，并追加 `Copyright (c) 2026 yxzly6819`。MIT 要求保留原版权声明，这一点不能省。
+- **保留自上游**：工程导入与自动发现、Keil 工程树、编译/重编译/下载、`c_cpp_properties.json` 生成、`A51` 语法与代码片段、图标资源、四个 `KeilAssistant.*` 配置键、命令与视图 id。
+- **本版的改动**：生成文件从工程目录移到工作区、构建改为进程内执行（不再用 VS Code Task、不再占用终端）、输出通道按级别上色并自动弹出、编译日志解析成诊断、核心层与 VS Code 层分离并有 47 个单元测试、移除运行期对 `bin/Uv4Caller.exe` 的依赖、编辑器标题栏提供三个入口。
+- **`bin/Uv4Caller.exe`**：上游随包分发的二进制，本仓库保留作参考，运行期不调用，也不打进 `.vsix`（见 `.vscodeignore`）。
+- **问题反馈**：请提到 [本仓库的 issue](https://github.com/yxzly6819/keil-assistant-live/issues)，上游已停止更新。
+- **发布**：打 `.vsix` / 上架前的检查清单见 [docs/publishing.md](docs/publishing.md)。
 
 ## License
 
 MIT，见 [LICENSE](LICENSE)。
+
 

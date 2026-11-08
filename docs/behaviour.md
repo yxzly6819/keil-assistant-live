@@ -1,11 +1,11 @@
 # Behaviour specification
 
-This is the one page that says what version 2 of Keil Assistant promises, what it
+This is the one page that says what Keil Assistant Live 1.0 promises, what it
 refuses to do, and what is still undecided. Everything here is meant to be
 checkable against the code; if it drifts, the document is wrong.
 
-Version 2 is a fork of [github0null/keil-assistant](https://github.com/github0null/keil-assistant)
-(MIT, by cl); the behaviour below is what *this* fork promises.
+It is an independent rewrite of [github0null/keil-assistant](https://github.com/github0null/keil-assistant)
+(MIT, by cl); the behaviour below is what *this* extension promises.
 
 ## 1. Purpose
 
@@ -23,6 +23,9 @@ Keil Assistant lets you treat a Keil uVision 5 project as a VS Code project:
   in uVision, and a saved .uvproj/.uvprojx file is the only source of truth.
 - It does not implement Keil's C51 code generation, device database or packs.
 - It is Windows only (Keil uVision itself is).
+- It does not coexist with the upstream extension: command ids, the `project` view
+  id and the `KeilAssistant.*` settings are shared, so both cannot be enabled at
+  the same time.
 - C51 dependency expansion (`.d` files) is not implemented; only ARM projects
   show reference files.
 
@@ -140,10 +143,10 @@ A backslash escapes a space only; otherwise it is a path separator.
 
 ## 8. Appendix: `bin/Uv4Caller.exe`
 
-Version 1 shipped a .NET helper that called `UV4.exe`. Reading its IL shows the
-whole program: parse `--uv4Path/--prjPath/--targetName/-c` into a dictionary,
-substitute `${...}` in the `-c` template, then call msvcrt's `system()` — which
-runs the command through `cmd.exe` and returns its exit status.
+The original Keil Assistant shipped a .NET helper that called `UV4.exe`. Reading
+its IL shows the whole program: parse `--uv4Path/--prjPath/--targetName/-c` into
+a dictionary, substitute `${...}` in the `-c` template, then call msvcrt's
+`system()` — which runs the command through `cmd.exe` and returns its exit status.
 
 That is exactly what a VS Code `ShellExecution` does, so the helper is no longer
 used. The file is kept in the repository as a reference for the original

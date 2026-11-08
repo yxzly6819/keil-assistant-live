@@ -1,12 +1,12 @@
 {
-    "name": "keil-assistant",
-    "displayName": "Keil Assistant",
-    "description": "Load, browse, build and flash Keil uVision 5 projects (.uvproj / .uvprojx) inside VS Code.",
-    "version": "2.0.0",
-    "publisher": "cl",
+    "name": "keil-assistant-live",
+    "displayName": "Keil Assistant Live",
+    "description": "Keil uVision 5 project support in VS Code: project tree, build, flash and cpptools sync. An independent rewrite of Keil Assistant.",
+    "version": "1.0.0",
+    "publisher": "yxzly6819",
     "author": {
-        "name": "cl",
-        "email": "2584456014@qq.com"
+        "name": "yxzly6819",
+        "email": "yxzly6819@163.com"
     },
     "keywords": [
         "keil",
@@ -17,7 +17,7 @@
         "uvision"
     ],
     "license": "MIT",
-    "homepage": "https://github.com/github0null/keil-assistant",
+    "homepage": "https://github.com/yxzly6819/keil-assistant-live",
     "engines": {
         "vscode": "^1.85.0"
     },
@@ -30,11 +30,11 @@
     "main": "./dist/extension.js",
     "repository": {
         "type": "git",
-        "url": "https://github.com/github0null/keil-assistant.git"
+        "url": "https://github.com/yxzly6819/keil-assistant-live.git"
     },
     "bugs": {
-        "url": "https://github.com/github0null/keil-assistant/issues",
-        "email": "2584456014@qq.com"
+        "url": "https://github.com/yxzly6819/keil-assistant-live/issues",
+        "email": "yxzly6819@163.com"
     },
     "activationEvents": [
         "onView:project",

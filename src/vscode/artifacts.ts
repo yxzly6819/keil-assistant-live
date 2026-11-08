@@ -31,11 +31,6 @@ export class ArtifactPaths {
         return join(this.stateDirectory, `${this.projectId}.build.log`);
     }
 
-    /** Generated wrapper that runs uVision and echoes its log into the terminal. */
-    get buildScriptFile(): string {
-        return join(this.stateDirectory, `${this.projectId}.build.cmd`);
-    }
-
     ensureStateDirectory(): void {
         fs.mkdirSync(this.stateDirectory, { recursive: true });
     }

@@ -266,56 +266,7 @@
                     "name": "Keil uVision Project"
                 }
             ]
-        },
-        "taskDefinitions": [
-            {
-                "type": "keil-task"
-            }
-        ],
-        "problemMatchers": [
-            {
-                "name": "c51",
-                "fileLocation": "autoDetect",
-                "pattern": [
-                    {
-                        "regexp": "^([^\\(]+)\\(([\\d]+)\\):\\s+(error|warning)\\s+([A-Z0-9]+):\\s+(.+)$",
-                        "file": 1,
-                        "location": 2,
-                        "severity": 3,
-                        "code": 4,
-                        "message": 5
-                    }
-                ]
-            },
-            {
-                "name": "armcc",
-                "fileLocation": "autoDetect",
-                "pattern": [
-                    {
-                        "regexp": "^([^\\(]+)\\(([\\d]+)\\):\\s+(error|warning):\\s+#([\\d\\w-]+):\\s+(.+)$",
-                        "file": 1,
-                        "location": 2,
-                        "severity": 3,
-                        "code": 4,
-                        "message": 5
-                    }
-                ]
-            },
-            {
-                "name": "gcc",
-                "fileLocation": "autoDetect",
-                "pattern": [
-                    {
-                        "regexp": "^(.+):(\\d+):(\\d+):\\s+(\\w+):\\s+(.*)$",
-                        "file": 1,
-                        "line": 2,
-                        "column": 3,
-                        "severity": 4,
-                        "message": 5
-                    }
-                ]
-            }
-        ]
+        }
     },
     "scripts": {
         "vscode:prepublish": "npm run package",

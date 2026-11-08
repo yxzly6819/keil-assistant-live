@@ -26,6 +26,11 @@ export class Logger {
         this.channel.appendLine(text);
     }
 
+    /** Appends text as it arrives, without forcing line breaks. */
+    stream(text: string): void {
+        this.channel.append(text);
+    }
+
     private write(level: string, logFile: string | undefined, message: string): void {
         const line = `${new Date().toISOString()} [${level}] ${message}`;
         this.channel.appendLine(line);

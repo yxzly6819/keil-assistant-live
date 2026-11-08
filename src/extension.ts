@@ -19,7 +19,7 @@ export function activate(context: vscode.ExtensionContext): void {
         store,
         explorer,
         tree,
-        ...registerCommands(store, explorer),
+        ...registerCommands(store, explorer, channel),
         vscode.workspace.onDidChangeWorkspaceFolders(() => void store.restore())
     );
 
@@ -30,9 +30,14 @@ export function deactivate(): void {
     // Everything is disposed through `context.subscriptions`.
 }
 
-function registerCommands(store: ProjectStore, explorer: ProjectExplorer): vscode.Disposable[] {
+function registerCommands(
+    store: ProjectStore,
+    explorer: ProjectExplorer,
+    channel: vscode.OutputChannel
+): vscode.Disposable[] {
     return [
         vscode.commands.registerCommand('explorer.open', () => openProject(store)),
+        vscode.commands.registerCommand('keil-assistant.showOutput', () => channel.show(true)),
         vscode.commands.registerCommand('project.close', (item?: ViewItem) => {
             const loaded = item?.loaded ?? store.getActiveProject();
             if (loaded !== undefined) {

@@ -14,18 +14,18 @@ Rewritten as a layered extension. Every user-facing feature of 1.7 is kept.
 - **Changed:** `c_cpp_properties.json` is now merged — configurations of other
   tools and unknown fields survive, and the file is no longer rewritten when it
   cannot be parsed (it is backed up to `.bak` first).
-- **Changed:** build / rebuild / flash run through the Task API, so the problem
-  matchers work in every window, and success is decided by uVision's exit code.
+- **Changed:** build / rebuild / flash run as a child process inside the
+  extension host instead of as VS Code tasks. The `-o` build log streams into the
+  `Keil Assistant` output channel while the status bar shows the current action,
+  so the terminal stays quiet and repeated builds no longer stack task headers.
 - **New:** `Open Log` command, and a `Show Log` action on build failures.
 - **New:** unit tests for the parser, command builder, config merge, dependency
-  parser and path variables (`npm test`).
+  parser, diagnostics parser, log tailing and path variables (`pnpm test`).
 - **New:** `docs/behaviour.md`, the behaviour specification.
-- **Fixed:** compiler output is finally visible. `UV4.exe` is a GUI program that
-  prints nothing to the terminal, so a generated `.cmd` wrapper runs it, echoes
-  the `-o` build log into the task terminal and exits with uVision's status. The
-  same log is parsed into Problems panel entries (path, line, severity, message),
-  echoed to the `Keil Assistant` output channel, and download results such as
-  `Programming Done. Verify OK.` are reported in a notification.
+- **Fixed:** compiler output is finally visible. `UV4.exe` is a GUI program with
+  no console output, so the `-o` log is streamed into the output channel and
+  parsed into Problems panel entries (path, line, severity, message); download
+  results such as `Programming Done. Verify OK.` are reported in a notification.
 - **Fixed:** a build that succeeds with warnings (uVision `ERRORLEVEL` 1) is no
   longer reported as a failure; all documented uVision exit codes are mapped to a
   named reason.
@@ -38,6 +38,9 @@ Rewritten as a layered extension. Every user-facing feature of 1.7 is kept.
   reference).
 - **Removed:** `activationEvents: ["*"]`; the extension activates on its view,
   its commands, or a workspace containing a project file.
+- **Removed:** the contributed `taskDefinitions` and `problemMatchers`. The build
+  log is parsed by the extension itself, so the Problems panel has one source of
+  truth and no task is involved.
 
 ## [v1.7.1]
 - Fixed: can't use shortcut key

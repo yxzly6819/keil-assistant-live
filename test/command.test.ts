@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 
-import { actionTitle, batchScript, classifyExitCode, quoteForCmd, uv4Command } from '../src/core/command';
+import { actionTitle, classifyExitCode, uv4Command } from '../src/core/command';
 import { test } from './harness';
 
 const UV4 = 'C:\\Keil_v5\\UV4\\UV4.exe';
@@ -31,23 +31,6 @@ test('an output log is appended when a path is given', () => {
         '-o',
         'D:\\ws\\.vscode\\keil-assistant\\abc.build.log'
     ]);
-});
-
-test('the generated wrapper runs uVision, echoes the log and keeps the exit code', () => {
-    const log = 'D:\\ws\\.vscode\\keil-assistant\\abc.build.log';
-    const command = uv4Command('rebuild', UV4, PROJECT, 'timer', log);
-    const script = batchScript(command, log).split('\r\n');
-
-    assert.ok(script.includes('@echo off'));
-    assert.equal(script[3], `${UV4} -r ${PROJECT} -j0 -t timer -o ${log}`);
-    assert.ok(script.includes('set "KEIL_RC=%ERRORLEVEL%"'));
-    assert.ok(script.includes(`if exist ${log} type ${log}`));
-    assert.ok(script.includes('exit /b %KEIL_RC%'));
-});
-
-test('batch arguments are quoted only when they need it', () => {
-    assert.equal(quoteForCmd('C:\\Keil_v5\\UV4\\UV4.exe'), 'C:\\Keil_v5\\UV4\\UV4.exe');
-    assert.equal(quoteForCmd('C:\\Program Files\\UV4\\UV4.exe'), '"C:\\Program Files\\UV4\\UV4.exe"');
 });
 
 test('actions have user facing titles', () => {

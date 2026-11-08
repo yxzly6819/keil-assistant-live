@@ -69,12 +69,24 @@ function collectMacros(executable: string): Promise<void> {
             resolve();
         };
 
-        const child = spawn(executable, ['--target=arm-arm-none-eabi', '-E', '-dM', '-'], {
-            windowsHide: true
-        });
+        const child = (() => {
+            try {
+                return spawn(executable, ['--target=arm-arm-none-eabi', '-E', '-dM', '-'], {
+                    windowsHide: true
+                });
+            } catch {
+                // A toolchain we cannot start must never break project loading.
+                return undefined;
+            }
+        })();
+
+        if (child === undefined) {
+            finish(undefined);
+            return;
+        }
 
         let output = '';
-        child.stdout.on('data', (chunk) => {
+        child.stdout?.on('data', (chunk) => {
             output += chunk.toString();
         });
         child.on('error', () => finish(undefined));

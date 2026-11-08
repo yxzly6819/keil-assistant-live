@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import { basename, dirname, extname, join } from 'node:path';
 import * as vscode from 'vscode';
 
-import { actionTitle, batchScript, BuildAction, classifyExitCode, uv4Command } from '../core/command';
+import { actionTitle, BuildAction, classifyExitCode, uv4Command } from '../core/command';
 import { buildSummary, flashSummary } from '../core/buildlog';
 import { parseBuildOutput } from '../core/diagnostics';
 import {
@@ -27,7 +27,8 @@ import { parseProject, resolveProjectPath, uniquePaths } from '../core/parser';
 import { ArtifactPaths, cppPropertiesFileFor } from './artifacts';
 import { readSettings, Settings, uv4PathFor, uv4SettingKey } from './config';
 import { appendLine, Logger } from './logger';
-import { runBuildScript } from './tasks';
+import { runUv4 } from './runner';
+import { BuildStatus } from './status';
 import { resolverFor, preloadArmclangMacros } from './toolchain';
 import { discoverProjects, resolveProjectRoot } from './workspace';
 
@@ -48,6 +49,7 @@ export class ProjectStore implements vscode.Disposable {
     private readonly subscriptions: vscode.Disposable[] = [];
     private readonly diagnostics = vscode.languages.createDiagnosticCollection('keil-assistant');
     private readonly diagnosticFiles = new Map<string, vscode.Uri[]>();
+    private readonly status = new BuildStatus('keil-assistant.showOutput');
     private settings: Settings;
     private activeProjectId: string | undefined;
     private warnedAboutFallback = false;
@@ -195,51 +197,58 @@ export class ProjectStore implements vscode.Disposable {
             target.name,
             entry.artifacts.buildLogFile
         );
+        const label = `${actionTitle(action)} ${entry.project.name}`;
         this.logger.info(
             entry.artifacts.logFile,
             `${actionTitle(action)} "${target.name}": ${command.executable} ${command.args.join(' ')}`
         );
+        this.logger.raw('');
+        this.logger.raw(`──── ${actionTitle(action)} "${target.name}" · ${clock()} ────`);
+        this.status.start(label);
 
         try {
-            // The wrapper runs uVision, echoes the `-o` log into the task
-            // terminal and exits with uVision's status.
             entry.artifacts.ensureStateDirectory();
-            fs.writeFileSync(
-                entry.artifacts.buildScriptFile,
-                batchScript(command, entry.artifacts.buildLogFile),
-                'utf8'
-            );
+            const started = Date.now();
+            const exitCode = await runUv4({
+                command,
+                outputLog: entry.artifacts.buildLogFile,
+                onOutput: (chunk) => this.logger.stream(chunk)
+            });
+            const seconds = ((Date.now() - started) / 1000).toFixed(1);
 
-            const exitCode = await runBuildScript(
-                entry.artifacts.buildScriptFile,
-                `${entry.project.name} · ${actionTitle(action)}`
-            );
             const result = classifyExitCode(exitCode);
             const output = readText(entry.artifacts.buildLogFile);
 
             this.publishDiagnostics(entry, output);
-            this.logBuildOutput(entry, action, output);
 
-            const summary = buildSummary(output);
+            const footer =
+                result.outcome === 'failure'
+                    ? `failed — ${result.detail}`
+                    : result.outcome === 'warnings'
+                      ? 'finished with warnings'
+                      : 'finished';
+            this.logger.raw(`──── ${footer} · ${seconds}s ────`);
+            this.status.finish(
+                result.outcome === 'failure' ? 'failure' : result.outcome === 'warnings' ? 'warnings' : 'ok',
+                label
+            );
+
             if (result.outcome === 'failure') {
                 this.logger.error(
                     entry.artifacts.logFile,
-                    `${actionTitle(action)} failed: ${result.detail}${summary === undefined ? '' : ` — ${summary}`}`
+                    `${actionTitle(action)} failed: ${result.detail}`
                 );
-                await this.reportFailure(entry, action, result.detail, summary);
+                await this.reportFailure(entry, action, result.detail, buildSummary(output));
                 return;
             }
 
             this.logger.info(
                 entry.artifacts.logFile,
-                `${actionTitle(action)} finished: ${result.detail}${summary === undefined ? '' : ` — ${summary}`} (exit code ${exitCode})`
+                `${actionTitle(action)} finished: ${result.detail} (exit code ${exitCode})`
             );
-
-            if (action === 'download') {
-                const flash = flashSummary(output);
-                void vscode.window.showInformationMessage(
-                    flash === undefined ? 'Download finished.' : `Download finished: ${flash}`
-                );
+            const flash = action === 'download' ? flashSummary(output) : undefined;
+            if (flash !== undefined) {
+                void vscode.window.showInformationMessage(`Download finished: ${flash}`);
             } else if (result.outcome === 'warnings') {
                 void vscode.window.showWarningMessage(
                     `${actionTitle(action)} finished with warnings. See the Problems panel or the output channel.`
@@ -284,6 +293,7 @@ export class ProjectStore implements vscode.Disposable {
         this.entries.clear();
         this.diagnostics.clear();
         this.diagnostics.dispose();
+        this.status.dispose();
         for (const subscription of this.subscriptions) {
             subscription.dispose();
         }
@@ -493,17 +503,6 @@ export class ProjectStore implements vscode.Disposable {
         this.diagnosticFiles.set(entry.project.id, uris);
     }
 
-    private logBuildOutput(entry: Entry, action: BuildAction, output: string): void {
-        if (output.trim() === '') {
-            this.logger.raw(`--- ${actionTitle(action)} (${entry.project.name}): no output ---`);
-            return;
-        }
-        this.logger.raw(`--- ${actionTitle(action)} (${entry.project.name}) ---`);
-        for (const line of output.trim().split(/\r\n|\r|\n/)) {
-            this.logger.raw(line.replace(/\u0000/g, ''));
-        }
-    }
-
     private async promptForUv4Path(toolchain: ToolchainId): Promise<void> {
         const key = uv4SettingKey(toolchain);
         const choice = await vscode.window.showErrorMessage(
@@ -635,4 +634,8 @@ function readText(file: string): string {
     } catch {
         return '';
     }
+}
+
+function clock(): string {
+    return new Date().toLocaleTimeString(undefined, { hour12: false });
 }

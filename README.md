@@ -9,7 +9,8 @@
 ## 2.0 的变化
 
 - **`.vscode` 生成在工作区目录，而不是 Keil 工程目录**：工程目录不再被写入任何文件。
-- 编译/烧录改为 VS Code Task + Problem Matcher，编译结果以 uVision 的退出码为准。
+- 编译/烧录在扩展进程内执行，输出实时流入 `Keil Assistant` 输出通道，状态栏显示进度；判定以 uVision 的退出码为准。
+- 编译错误与警告解析成「问题」面板条目（带文件、行号），终端不再被占用。
 - 源码按「纯核心 / VS Code 适配层」拆分，核心层有单元测试（`npm test`，28 个用例）。
 - 移除了随包分发的 `Uv4Caller.exe` 依赖（分析结论见 [docs/behaviour.md](docs/behaviour.md#8-appendix-uv4callerexe)）。
 - 未配置 `UV4.exe` 路径时不再拼出 `--uv4Path null` 这样的命令，而是直接提示。
@@ -18,7 +19,7 @@
 
 - **导入工程**：打开 `.uvproj` / `.uvprojx`，或直接打开工程所在目录自动发现。
 - **工程树**：目标（Target）→ 文件分组 → 源文件，图标区分 C / C++ / 头文件 / 汇编 / 库文件，被排除编译的分组和文件会标灰。
-- **一键编译、重编译、下载**：`F7` / `Ctrl+Alt+F7` / `Ctrl+Alt+D`。uVision 是 GUI 程序、**不往终端打印任何东西**，所以扩展生成一个小 `.cmd` 包装脚本：跑完 uVision 后把 `-o` 日志回显到任务终端，并用 uVision 的原始退出码退出。同样的日志还会被解析成「问题」面板条目，并汇总到 `Keil Assistant` 输出通道。
+- **一键编译、重编译、下载**：`F7` / `Ctrl+Alt+F7` / `Ctrl+Alt+D`。uVision 是 GUI 程序、**不往终端打印任何东西**，所以扩展直接以子进程运行它，并把 `-o` 日志**实时流进** `Keil Assistant` 输出通道（状态栏显示当前动作），同时解析成「问题」面板条目。整个过程不创建 VS Code Task，终端保持干净。
 - **自动同步 C/C++ 配置**：为每个 Target 生成一份 cpptools 配置，包含 include 路径、宏定义（含 ARMCC / ARMCLANG / C51 的内建宏）。
 - **展开引用**：ARM 工程编译成功后，源文件节点可以展开出 `.d` 文件里记录的依赖头文件。
 - **工程文件热更新**：在 uVision 里改完工程保存，VS Code 里自动刷新。
@@ -82,18 +83,22 @@ src/
 ├── core/                 纯 TypeScript，不依赖 vscode、不直接读写文件系统
 │   ├── model.ts          工程模型（Project / Target / FileGroup / Source）
 │   ├── parser.ts         .uvproj(x) XML → 模型
-│   ├── command.ts        UV4 命令行与 problem matcher
+│   ├── command.ts        UV4 命令行与退出码分级
 │   ├── cppconfig.ts      c_cpp_properties.json 的合并策略
+│   ├── diagnostics.ts    编译日志 → 诊断
+│   ├── buildlog.ts       从日志里提取构建/烧录摘要
+│   ├── logtail.ts        增量读取正在写入的日志
 │   ├── deps.ts           .d 依赖文件解析
 │   ├── toolchain.ts      Keil 头文件目录与内建宏
 │   ├── macros.ts         编译器内建宏表
 │   └── paths.ts          设置里的变量展开
 └── vscode/               唯一 import vscode 的一层
     ├── projectStore.ts   加载、监听、构建状态、cpptools 同步
+    ├── runner.ts         以子进程运行 UV4 并流式读取日志
+    ├── status.ts         状态栏进度与结果
     ├── explorer.ts       树视图（模型的纯渲染）
     ├── workspace.ts      工程发现与 .vscode 落点
     ├── artifacts.ts      产物路径
-    ├── tasks.ts          UV4 的 Task 执行与退出码
     ├── config.ts         设置读取与校验
     ├── icons.ts / logger.ts
     └── toolchain.ts      把 Keil 安装目录注入核心层

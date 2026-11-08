@@ -15,11 +15,18 @@ export function activate(context: vscode.ExtensionContext): void {
     const explorer = new ProjectExplorer(store, new IconTheme(context.extensionPath));
     const tree = vscode.window.createTreeView('project', { treeDataProvider: explorer });
 
+    // The editor title buttons only make sense while a project is loaded.
+    const syncContext = (): void => {
+        void vscode.commands.executeCommand('setContext', 'keil.hasProject', store.list().length > 0);
+    };
+    syncContext();
+
     context.subscriptions.push(
         channel,
         store,
         explorer,
         tree,
+        store.onDidChange(syncContext),
         ...registerCommands(store, explorer, channel),
         vscode.workspace.onDidChangeWorkspaceFolders(() => void store.restore())
     );

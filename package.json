@@ -167,6 +167,23 @@
             }
         ],
         "menus": {
+            "editor/title": [
+                {
+                    "command": "project.build",
+                    "group": "navigation@1",
+                    "when": "keil.hasProject"
+                },
+                {
+                    "command": "project.rebuild",
+                    "group": "navigation@2",
+                    "when": "keil.hasProject"
+                },
+                {
+                    "command": "project.download",
+                    "group": "navigation@3",
+                    "when": "keil.hasProject"
+                }
+            ],
             "view/title": [
                 {
                     "command": "explorer.open",
